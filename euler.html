@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Searching for 36 officers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500&family=DM+Serif+Display&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ffffff; --ink:#000000; --muted:#6b6b6b; --line:#d9d9d9; --soft:#f3f3f3;
+  --cream:#fce3bd; --orange:#e89e54; --edge:#c78040;
+  --empty:rgba(0,0,0,.22);
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#161616; --ink:#f2f2f2; --muted:#a3a3a3; --line:#3a3a3a; --soft:#222; color-scheme:dark; }
+}
+:root[data-theme="dark"]{ --bg:#161616; --ink:#f2f2f2; --muted:#a3a3a3; --line:#3a3a3a; --soft:#222; color-scheme:dark; }
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0}
+body{background:var(--bg); color:var(--ink); font-family:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif; font-size:18px; line-height:1.5}
+main{max-width:1180px; margin:0 auto; padding:48px 32px 64px}
+h1{font-family:"DM Serif Display",Georgia,serif; font-weight:400; font-size:clamp(44px,6.5vw,84px); line-height:1.05; margin:0 0 16px}
+.intro{max-width:62ch; margin:0 0 40px; font-size:20px}
+.layout{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,380px); gap:56px; align-items:start}
+.boards{display:flex; flex-direction:column; gap:28px}
+.board{display:grid; grid-template-columns:repeat(6,1fr); width:100%; max-width:560px; aspect-ratio:1; outline:3px solid var(--edge)}
+.board.small{max-width:260px; outline-width:2px}
+.cell{display:flex; align-items:center; justify-content:center; position:relative; font-family:"Noto Sans Symbols 2","Segoe UI Symbol","Apple Symbols",serif; font-variant-emoji:text; line-height:1; user-select:none}
+.cell.l{background:var(--cream)} .cell.d{background:var(--orange)}
+.board .cell{font-size:clamp(26px,5.2vw,56px)}
+.board.small .cell{font-size:clamp(16px,2.6vw,26px)}
+.cell.cur::after{content:""; position:absolute; inset:3px; border:3px solid #000; pointer-events:none}
+.cell.fixed::before{content:""; position:absolute; left:6px; top:6px; width:6px; height:6px; border-radius:50%; background:rgba(0,0,0,.35)}
+.caption{color:var(--muted); font-size:15px; margin-top:8px}
+.side h2{font-family:"DM Serif Display",Georgia,serif; font-weight:400; font-size:30px; margin:0 0 12px}
+.stats{margin:0 0 28px; padding:0}
+.stat{display:flex; justify-content:space-between; align-items:baseline; gap:16px; padding:12px 0; border-bottom:1px solid var(--line)}
+.stat dt{color:var(--muted)} .stat dd{margin:0; font-size:26px; font-variant-numeric:tabular-nums; font-family:"DM Serif Display",Georgia,serif}
+.controls{display:flex; flex-wrap:wrap; gap:12px; margin-bottom:20px}
+button{font:inherit; font-size:17px; padding:12px 20px; border:2px solid var(--ink); background:var(--bg); color:var(--ink); cursor:pointer; border-radius:0}
+button.primary{background:var(--ink); color:var(--bg)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--edge); outline-offset:3px}
+button:disabled{opacity:.4; cursor:default}
+label.speed{display:block; margin:6px 0 4px}
+input[type=range]{width:100%; accent-color:var(--edge)}
+.speedval{color:var(--muted); font-size:15px}
+.legend{display:flex; flex-wrap:wrap; gap:10px 18px; margin:22px 0 0; font-size:15px; color:var(--muted)}
+.legend span.dot{display:inline-block; width:14px; height:14px; border-radius:50%; vertical-align:-2px; margin-right:6px}
+.status{margin-top:28px; padding:20px; background:var(--soft); font-size:18px; min-height:3em}
+.status strong{font-weight:500}
+.how{max-width:70ch; margin-top:56px; color:var(--ink)}
+.how h2{font-family:"DM Serif Display",Georgia,serif; font-weight:400; font-size:30px; margin:0 0 8px}
+.how p{margin:0 0 14px}
+@media (max-width:860px){
+  main{padding:28px 20px 48px}
+  .layout{grid-template-columns:1fr; gap:36px}
+  .board{max-width:none}
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+</style>
+</head>
+<body>
+<main>
+  <h1>Searching for 36 officers</h1>
+	<br>
+<br>
+<br>
+   <div class="layout">
+    <div class="boards">
+      <div>
+        <div class="board" id="board" role="img" aria-label="Current attempt"></div>
+        <div class="caption" id="boardCap">Current attempt</div>
+      </div>
+      <div>
+        <div class="board small" id="best" role="img" aria-label="Closest attempt so far"></div>
+        <div class="caption" id="bestCap">Closest attempt so far</div>
+      </div>
+    </div>
+
+    <div class="side">
+      <h2>Progress</h2>
+      <dl class="stats">
+        <div class="stat"><dt>Rank squares checked</dt><dd id="sChecked">0 of 9,408</dd></div>
+        <div class="stat"><dt>Colourings tried</dt><dd id="sNodes">0</dd></div>
+        <div class="stat"><dt>Most officers seated</dt><dd id="sBest">6 of 36</dd></div>
+        <div class="stat"><dt>Valid arrangements found</dt><dd id="sFound">0</dd></div>
+      </dl>
+
+      <div class="controls">
+             <button id="all">Run</button>
+ 
+      </div>
+      <label class="speed" for="speed">Speed</label>
+      <input id="speed" type="range" min="0" max="7" value="2">
+      <div class="speedval" id="speedVal"></div>
+    </div>
+  </div>
+
+  <section class="how">
+    <h2>Why this covers every case</h2>
+    <p>Swapping rows, swapping columns or renaming ranks never changes whether a square has an orthogonal partner. Any Latin square of order 6 can be reordered so its first row and first column read 1 to 6, and there are exactly 9,408 squares in that form. Checking them all checks all 812,851,200 Latin squares of order 6.</p>
+  </section>
+</main>
+
+<script>
+(function(){
+  const n = 6, N = 36;
+  const PIECES = ["♚","♛","♝","♞","♜","♟"].map(p => p + "\uFE0E");
+  const COLORS = ["#db2626","#1f4dd9","#1a9933","#8c33bf","#e6339a","#0d99b3"];
+  const NAMES = ["red","blue","green","purple","pink","teal"];
+
+  // ---- all reduced Latin squares of order 6 ----
+  function reducedSquares(){
+    const out = [], g = Array.from({length:n}, () => Array(n).fill(-1));
+    for (let c = 0; c < n; c++) g[0][c] = c;
+    function rec(r, c){
+      if (r === n) { out.push(Int8Array.from(g.flat())); return; }
+      if (c === n) return rec(r + 1, 0);
+      if (c === 0) { g[r][0] = r; rec(r, 1); g[r][0] = -1; return; }
+      for (let v = 0; v < n; v++){
+        let ok = true;
+        for (let k = 0; k < c; k++) if (g[r][k] === v) { ok = false; break; }
+        if (ok) for (let k = 0; k < r; k++) if (g[k][c] === v) { ok = false; break; }
+        if (!ok) continue;
+        g[r][c] = v; rec(r, c + 1); g[r][c] = -1;
+      }
+    }
+    rec(1, 0);
+    return out;
+  }
+  const SQUARES = reducedSquares();
+
+  // ---- backtracking search for a colouring (orthogonal mate) ----
+  function makeSearch(L){
+    const col = new Int8Array(N).fill(-1), next = new Int8Array(N);
+    const rowU = new Uint8Array(N), colU = new Uint8Array(N), pairU = new Uint8Array(N);
+    for (let c = 0; c < n; c++){ col[c] = c; rowU[c] = 1; colU[c*n + c] = 1; pairU[L[c]*n + c] = 1; }
+    const s = { L, col, i: n, nodes: 0, best: n, bestCol: Int8Array.from(col), done: false, found: false };
+    s.step = function(){
+      if (s.done) return;
+      s.nodes++;
+      const i = s.i;
+      if (i === N){ s.found = true; s.done = true; return; }
+      if (i < n){ s.done = true; return; }
+      const r = (i / n) | 0, c = i % n;
+      if (col[i] >= 0){ const v = col[i]; rowU[r*n+v] = 0; colU[c*n+v] = 0; pairU[L[i]*n+v] = 0; col[i] = -1; }
+      let v = next[i];
+      for (; v < n; v++) if (!rowU[r*n+v] && !colU[c*n+v] && !pairU[L[i]*n+v]) break;
+      if (v < n){
+        col[i] = v; next[i] = v + 1; rowU[r*n+v] = 1; colU[c*n+v] = 1; pairU[L[i]*n+v] = 1;
+        s.i = i + 1;
+        if (s.i > s.best){ s.best = s.i; s.bestCol = Int8Array.from(col); }
+      } else { next[i] = 0; s.i = i - 1; }
+    };
+    return s;
+  }
+
+  // ---- state ----
+  let idx, search, totalNodes, bestOverall, bestBoard, found, running, mode, lastTick;
+  function reset(){
+    idx = 0; search = makeSearch(SQUARES[0]); totalNodes = 0;
+    bestOverall = n; bestBoard = { L: SQUARES[0], col: Int8Array.from(search.col), sq: 0 };
+    found = 0; running = false; mode = null;
+    setStatus("Press “Watch the search” to see it work cell by cell, or check every square at full speed.");
+    updateButtons(); render(true);
+  }
+
+  // ---- speed levels ----
+  const SPEEDS = [
+    {label:"1 step every half second", every:500, per:1},
+    {label:"5 steps a second", every:200, per:1},
+    {label:"1 step a frame", every:0, per:1},
+    {label:"10 steps a frame", every:0, per:10},
+    {label:"200 steps a frame", every:0, per:200},
+    {label:"5,000 steps a frame", every:0, per:5000},
+    {label:"100,000 steps a frame", every:0, per:100000},
+    {label:"As fast as possible", every:0, per:Infinity},
+  ];
+  const speedEl = document.getElementById("speed");
+  const speedVal = document.getElementById("speedVal");
+  function showSpeed(){ speedVal.textContent = SPEEDS[+speedEl.value].label; }
+  speedEl.addEventListener("input", showSpeed); showSpeed();
+
+  // ---- board DOM ----
+  function buildBoard(el){
+    el.innerHTML = "";
+    const cells = [];
+    for (let i = 0; i < N; i++){
+      const d = document.createElement("div");
+      const r = (i / n) | 0, c = i % n;
+      d.className = "cell " + ((r + c) % 2 ? "d" : "l");
+      el.appendChild(d); cells.push(d);
+    }
+    return cells;
+  }
+  const boardCells = buildBoard(document.getElementById("board"));
+  const bestCells = buildBoard(document.getElementById("best"));
+  function paint(cells, L, col, cur){
+    for (let i = 0; i < N; i++){
+      const d = cells[i];
+      const p = PIECES[L[i]];
+      if (d.textContent !== p) d.textContent = p;
+      const color = col[i] >= 0 ? COLORS[col[i]] : "var(--empty)";
+      if (d.style.color !== color) d.style.color = color;
+      d.classList.toggle("cur", i === cur);
+      d.classList.toggle("fixed", i < n);
+    }
+  }
+  const fmt = x => x.toLocaleString("en-US");
+  const el = id => document.getElementById(id);
+  function render(){
+    const cur = search.done ? -1 : Math.min(search.i, N - 1);
+    paint(boardCells, search.L, search.col, cur);
+    paint(bestCells, bestBoard.L, bestBoard.col, -1);
+    el("boardCap").textContent = `Current attempt: rank square ${fmt(idx + 1)} of 9,408, ${search.i} officers seated`;
+    el("bestCap").textContent = `Closest so far: ${bestOverall} of 36 officers, from rank square ${fmt(bestBoard.sq + 1)}`;
+    el("sChecked").textContent = `${fmt(Math.min(idx, SQUARES.length))} of 9,408`;
+    el("sNodes").textContent = fmt(totalNodes + search.nodes);
+    el("sBest").textContent = `${bestOverall} of 36`;
+    el("sFound").textContent = fmt(found);
+  }
+  function setStatus(html){ el("status").innerHTML = html; }
+
+  // ---- legend ----
+  el("legend").innerHTML = COLORS.map((c, k) => `<span><span class="dot" style="background:${c}"></span>${NAMES[k]}</span>`).join("")
+    + `<span>Grey piece: no regiment yet</span><span>Dot: first row, fixed</span>`;
+
+  // ---- loop ----
+  function advanceOne(){
+    search.step();
+    if (search.best > bestOverall){ bestOverall = search.best; bestBoard = { L: search.L, col: Int8Array.from(search.bestCol), sq: idx }; }
+    if (search.done){
+      if (search.found){ found++; }
+      totalNodes += search.nodes;
+      idx++;
+      if (idx >= SQUARES.length){ finish(); return false; }
+      search = makeSearch(SQUARES[idx]);
+    }
+    return true;
+  }
+  function finish(){
+    running = false; mode = null; idx = SQUARES.length;
+    search = { L: bestBoard.L, col: bestBoard.col, i: bestOverall, nodes: 0, done: true };
+    updateButtons(); render();
+    setStatus(found === 0
+      ? `<strong>All 9,408 squares checked. None can be coloured.</strong> The best any arrangement manages is ${bestOverall} of 36 officers: there is no way to arrange Euler’s 36 officers.`
+      : `<strong>Found ${fmt(found)} valid arrangements.</strong>`);
+  }
+  function loop(t){
+    if (!running) return;
+    const sp = SPEEDS[mode === "all" ? 7 : +speedEl.value];
+    if (sp.every && t - lastTick < sp.every){ requestAnimationFrame(loop); return; }
+    lastTick = t;
+    if (sp.per === Infinity){
+      const start = performance.now();
+      while (performance.now() - start < 28){
+        let ok = true;
+        for (let k = 0; k < 20000 && ok; k++) ok = advanceOne();
+        if (!ok) return;
+      }
+    } else {
+      for (let k = 0; k < sp.per; k++) if (!advanceOne()) return;
+    }
+    render();
+    requestAnimationFrame(loop);
+  }
+  function start(m){
+    if (idx >= SQUARES.length) reset();
+    mode = m; running = true; lastTick = 0;
+    setStatus(m === "all"
+      ? "Checking every rank square at full speed. This takes around ten seconds."
+      : "Each step either places a colour or, when nothing fits, takes one back. The black outline marks the cell being tried.");
+    updateButtons(); requestAnimationFrame(loop);
+  }
+  function pause(){
+    running = false; mode = null; updateButtons();
+    setStatus("Paused. Change the speed or carry on.");
+  }
+  function updateButtons(){
+    el("play").textContent = running && mode === "watch" ? "Pause" : (idx > 0 || totalNodes + (search ? search.nodes : 0) > 0) && idx < SQUARES.length ? "Carry on watching" : "Watch the search";
+    el("all").textContent = running && mode === "all" ? "Pause" : "Check all 9,408";
+    el("play").disabled = running && mode === "all";
+    el("all").disabled = running && mode === "watch";
+  }
+  el("play").addEventListener("click", () => running ? pause() : start("watch"));
+  el("all").addEventListener("click", () => running ? pause() : start("all"));
+  el("reset").addEventListener("click", reset);
+
+  reset();
+})();
+</script>
+</body>
+</html>
